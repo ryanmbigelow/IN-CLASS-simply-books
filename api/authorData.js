@@ -17,8 +17,16 @@ const getAuthors = (uid) => new Promise((resolve, reject) => {
 });
 
 // FIXME: CREATE AUTHOR
-const createAuthor = () => {};
+const createAuthor = (authorObj) => new Promise((resolve, reject) => {
+  axios.post(`${dbUrl}/authors.json`, authorObj)
+    .then((response) => {
+      const payload = { firebaseKey: response.data.name };
+      axios.patch(`${dbUrl}/authors/${response.data.name}.json`, payload)
+        .then(resolve);
+    }).catch(reject);
+});
 
+// GET SINGLE AUTHOR
 const getSingleAuthor = (firebaseKey) => new Promise((resolve, reject) => {
   axios.get(`${dbUrl}/authors/${firebaseKey}.json`)
     .then((response) => resolve(response.data))
@@ -26,13 +34,47 @@ const getSingleAuthor = (firebaseKey) => new Promise((resolve, reject) => {
 });
 
 // FIXME: DELETE AUTHOR
-const deleteSingleAuthor = () => {};
+const deleteSingleAuthor = (firebaseKey) => new Promise((resolve, reject) => {
+  axios.delete(`${dbUrl}/authors/${firebaseKey}.json`)
+    .then(() => resolve('deleted'))
+    .catch((error) => reject(error));
+});
 
 // FIXME: UPDATE AUTHOR
-const updateAuthor = () => {};
+const updateAuthor = (authorObj) => new Promise((resolve, reject) => {
+  axios.patch(`${dbUrl}/authors/${authorObj.firebaseKey}.json`, authorObj)
+    .then(resolve)
+    .catch(reject);
+});
 
 // TODO: GET A SINGLE AUTHOR'S BOOKS
-const getAuthorBooks = () => {};
+const getAuthorBooks = (firebaseKey) => new Promise((resolve, reject) => {
+  fetch(`${dbUrl}/books.json?orderBy="author_id"&equalTo="${firebaseKey}"`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+    .then((response) => response.json())
+    .then((data) => resolve(Object.values(data)))
+    .catch(reject);
+});
+
+// FILTER FAVORITE AUTHORS
+const favoriteAuthors = (uid) => new Promise((resolve, reject) => {
+  fetch(`${dbUrl}/authors.json?orderBy="uid"&equalTo="${uid}"`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      const onSale = Object.values(data).filter((item) => item.favorite);
+      resolve(onSale);
+    })
+    .catch(reject);
+});
 
 export {
   getAuthors,
@@ -41,4 +83,5 @@ export {
   deleteSingleAuthor,
   updateAuthor,
   getAuthorBooks,
+  favoriteAuthors,
 };
